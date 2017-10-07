@@ -18,6 +18,11 @@ class ViewController: UIViewController {
     var logInPresented = false
     var xmppController: XMPPController!
 
+    
+    deinit {
+        self.logoutAction(nil)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
@@ -42,11 +47,12 @@ class ViewController: UIViewController {
         xmppController.send(txtVwSendMessage.text, toUser: xmppController.userJID.full())
     }
     
-    @IBAction func logoutAction(_ sender: UIButton) {
+    @IBAction func logoutAction(_ sender: UIButton?) {
         xmppController.disconnect()
         xmppController = nil
         if logInViewController == nil {
             logInViewController = self.storyboard?.instantiateViewController(withIdentifier: "LogInViewController") as? LogInViewController
+            logInViewController?.delegate = self
         }
         if logInViewController != nil {
             self.present(logInViewController!, animated: true, completion: nil)
@@ -74,7 +80,25 @@ extension ViewController: LogInViewControllerDelegate {
 extension ViewController: XMPPStreamDelegate {
 
     func xmppStreamDidAuthenticate(_ sender: XMPPStream!) {
-        self.logInViewController?.dismiss(animated: true, completion: nil)
+        self.logInViewController?.dismiss(animated: true, completion: {
+            //self.xmppController.getRemoteArchieveMessages()
+            //var xmppMessages: [XMPPMessage] = []
+            if let messages = self.xmppController.getLocalArchivedMessages() {
+                var strMessages = ""
+                for message in messages {
+                    let xmppMessage = message.message
+                    var strMessage = "\n" + (xmppMessage?.body() ?? "")
+                    if let from = xmppMessage?.from(), let fromUser = from.user {
+                        strMessage = strMessage + "(\(fromUser))"
+                    } else {
+                        strMessage = strMessage + "(Me)"
+                    }
+                    strMessages.append(strMessage)
+                    //xmppMessages.append(message.message)
+                }
+                self.txtVwSendMessage.text = strMessages
+            }
+        })
     }
     
     func xmppStream(_ sender: XMPPStream!, didNotAuthenticate error: DDXMLElement!) {
@@ -83,6 +107,32 @@ extension ViewController: XMPPStreamDelegate {
     
     func xmppStream(_ sender: XMPPStream!, didReceive message: XMPPMessage!) {
         lblReceivedMessage.text = message.body()
+    }
+    
+    func xmppStream(_ sender: XMPPStream!, didReceive iq: XMPPIQ!) -> Bool {
+        
+        if let chat = iq.forName("chat"), let chats = chat.children as? [DDXMLElement] {
+            print(chats)
+            /*
+            var chatMessages: [String] = []
+            for msg in chats {
+                if let body = msg.forName("body"), let strBody = body.stringValue {
+                    print(strBody)
+                    chatMessages.append(strBody)
+                    if msg.attributeForName("jid") == nil {
+                        type.append("Send")
+                    }
+                    else{
+                        type.append("Receive")
+                    }
+                }
+            }
+             */
+            
+            return false
+        }
+        
+        return true
     }
     
 }
