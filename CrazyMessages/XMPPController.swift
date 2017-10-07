@@ -50,6 +50,23 @@ class XMPPController: NSObject {
 
         try! self.xmppStream.connect(withTimeout: XMPPStreamTimeoutNone)
 	}
+    
+    func disconnect() {
+        if !self.xmppStream.isDisconnected() {
+            xmppStream.disconnect()
+            xmppStream.removeDelegate(self)
+        }
+    }
+    
+    func send(_ message: String, toUser: String) {
+        let messageElement = DDXMLElement(name: "message")
+        messageElement.addAttribute(withName: "type", stringValue: "chat")
+        messageElement.addAttribute(withName: "to", stringValue: toUser)
+        messageElement.addAttribute(withName: "from", stringValue: userJID.full())
+        let bodyElement = DDXMLElement(name: "body", stringValue: message)
+        messageElement.addChild(bodyElement)
+        xmppStream.send(messageElement)
+    }
 }
 
 extension XMPPController: XMPPStreamDelegate {
@@ -67,4 +84,16 @@ extension XMPPController: XMPPStreamDelegate {
 	func xmppStream(_ sender: XMPPStream!, didNotAuthenticate error: DDXMLElement!) {
 		print("Stream: Fail to Authenticate")
 	}
+    
+    func xmppStreamDidDisconnect(_ sender: XMPPStream!, withError error: Error!) {
+        print("Stream: Disconnected")
+    }
+    
+    func xmppStream(_ sender: XMPPStream!, didReceiveError error: DDXMLElement!) {
+        print("Stream: Error")
+    }
+    
+    func xmppStream(_ sender: XMPPStream!, didFailToSend message: XMPPMessage!, error: Error!) {
+        print("XMPP: Failed to sned message.\n\(error.localizedDescription)")
+    }
 }

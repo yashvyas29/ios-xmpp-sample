@@ -22,6 +22,9 @@ class LogInViewController: UIViewController {
 	
     override func viewDidLoad() {
         super.viewDidLoad()
+        userJIDLabel.text = "yash@qa.mysway.com"
+        userPasswordLabel.text = "1234"
+        serverLabel.text = "qa.mysway.com"
 	}
 
 	@IBAction func logInAction(sender: AnyObject) {

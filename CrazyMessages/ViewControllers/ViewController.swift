@@ -11,6 +11,9 @@ import XMPPFramework
 
 class ViewController: UIViewController {
 
+    @IBOutlet weak var txtVwSendMessage: UITextView!
+    @IBOutlet weak var lblReceivedMessage: UILabel!
+    
     weak var logInViewController: LogInViewController?
     var logInPresented = false
     var xmppController: XMPPController!
@@ -32,6 +35,21 @@ class ViewController: UIViewController {
         if segue.identifier == "LogInViewController" {
             let viewController = segue.destination as! LogInViewController
             viewController.delegate = self
+        }
+    }
+    
+    @IBAction func sendAction(_ sender: UIButton) {
+        xmppController.send(txtVwSendMessage.text, toUser: xmppController.userJID.full())
+    }
+    
+    @IBAction func logoutAction(_ sender: UIButton) {
+        xmppController.disconnect()
+        xmppController = nil
+        if logInViewController == nil {
+            logInViewController = self.storyboard?.instantiateViewController(withIdentifier: "LogInViewController") as? LogInViewController
+        }
+        if logInViewController != nil {
+            self.present(logInViewController!, animated: true, completion: nil)
         }
     }
 }
@@ -61,6 +79,10 @@ extension ViewController: XMPPStreamDelegate {
     
     func xmppStream(_ sender: XMPPStream!, didNotAuthenticate error: DDXMLElement!) {
         self.logInViewController?.showErrorMessage(message: "Wrong password or username")
+    }
+    
+    func xmppStream(_ sender: XMPPStream!, didReceive message: XMPPMessage!) {
+        lblReceivedMessage.text = message.body()
     }
     
 }
